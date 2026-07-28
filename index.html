@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>每日一推薦</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main class="container">
+    <header>
+      <h1>🎵 每日一推薦 🎵</h1>
+    </header>
+
+    <!-- 當天推薦區塊 -->
+    <section class="today-card">
+      <h2 id="today-title">載入中...</h2>
+      <p id="today-artist" class="artist"></p>
+      <!-- 改回純圖片封面區塊 -->
+      <div class="cover-wrapper">
+        <a id="today-cover-link" href="" target="_blank" rel="noopener noreferrer">
+          <img id="today-cover" src="" alt="歌曲封面">
+        </a>
+      </div>
+        <span id="today-date" class="date-badge">YYYY-MM-DD</span>
+    </section>
+
+    <!-- 歷史清單區塊 -->
+<section class="history-section">
+  <!-- 將標題與搜尋框包在同一區塊內 -->
+  <div class="history-header">
+    <h3>📜 往期推薦歷史</h3>
+    <div class="search-box">
+      <input type="text" id="search-input" placeholder="搜尋歌名或歌手..." />
+    </div>
+  </div>
+
+  <ul id="history-list">
+    <!-- 歷史紀錄 -->
+  </ul>
+</section>
+
+  <!-- 分頁按鈕區塊 -->
+  <div class="pagination">
+    <button id="prev-btn" onclick="changePage(-1)">← 上一頁</button>
+    <span id="page-info">第 1 頁</span>
+    <button id="next-btn" onclick="changePage(1)">下一頁 →</button>
+  </div>
+</section>
+
+  <script src="script.js"></script>
+</body>
+<!-- 頁尾製作人資訊 -->
+  <footer class="footer-credits">
+    Designed & Developed by <strong>GameManagerNT</strong> © 2026
+  </footer>
+
+</body>
+</html>

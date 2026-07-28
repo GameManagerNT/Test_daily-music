@@ -1,0 +1,309 @@
+/* 1. 全域重置 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 2. 全頁面樣式與背景 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #333;
+  line-height: 1.6;
+  padding: 20px;
+  min-height: 100vh;
+
+  /* 設定背景圖 (搭配半透明白色遮罩，避免背景太花) */
+  background-image: linear-gradient(rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.45)), url('picture/background1.png');
+  background-size: cover;        /* 滿版 */
+  background-position: center;   /* 置中 */
+  background-attachment: fixed;  /* 捲動時固定 */
+  background-repeat: no-repeat;
+
+  /* 設定全頁面的預設游標 */
+  cursor: url('picture/mouse1.png'), auto;
+}
+
+/* 3. 版面容器與標題 */
+.container {
+  max-width: 600px;
+  margin: 40px auto 80px auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+header h1 {
+font-size: 2.2rem;
+  font-weight: 800;
+  /* 文字微漸層效果 */
+  background: linear-gradient(135deg, #3bb8f6, #ed25b4);
+  background-clip: text;            /* 標準屬性 (補上這行) */
+  -webkit-background-clip: text;    /* 相容 Safari 與舊版 Chromium 瀏覽器 */
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: #555;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+/* 4. 今日推薦卡片 (套用半透明毛玻璃質感) */
+.today-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  margin-bottom: 30px;
+  text-align: center;
+  /* 保留原本樣式，新增平滑過渡動畫 */
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.today-card:hover {
+  transform: translateY(-4px); /* 向上微浮 4px */
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1); /* 陰影加深 */
+}
+
+
+.date-badge {
+  display: inline-block;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+/* 5. 封面圖片排版與微動畫 */
+.cover-wrapper {
+  width: 100%;
+  max-width: 480px;
+  aspect-ratio: 16 / 9;
+  margin: 10px auto 20px auto;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  background-color: #eee;
+}
+
+#today-cover {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.cover-wrapper:hover #today-cover {
+  transform: scale(1.03);
+}
+
+#today-title {
+  font-size: 1.6rem;
+  margin-bottom: 6px;
+}
+
+.artist {
+  font-weight: 500;
+  color: #4b5563;
+}
+
+/* 6. 歷史清單區塊 (套用半透明毛玻璃) */
+.history-section {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.history-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  color: #1f2937;
+}
+
+#history-list {
+  list-style: none;
+}
+
+/* 頂部標題與搜尋框容器 (並排佈局) */
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+/* 標題取消原本預設的底邊距 */
+.history-header h3 {
+  margin-bottom: 0;
+  white-space: nowrap; /* 避免標題換行 */
+}
+
+/* 搜尋框容器調整 */
+.search-box {
+  margin-bottom: 0;      /* 移除原本的下邊距 */
+  width: 200px;          /* 設定精緻的固定寬度 (可依喜好調整，如 180px~220px) */
+  max-width: 50%;
+}
+
+/* 搜尋輸入框微調 */
+#search-input {
+  width: 100%;
+  padding: 6px 12px;     /* 稍微縮減高度，讓排版更精緻 */
+  font-size: 0.85rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  outline: none;
+  transition: all 0.2s ease;
+  color: #333;
+}
+
+#search-input:focus {
+  border-color: #4f46e5;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+#history-list li.no-result {
+  justify-content: center; /* 水平置中 */
+  color: #9ca3af;           /* 質感灰色 */
+  padding: 24px 0;          /* 增加上下留白 */
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+}
+
+#history-list li.no-result:hover {
+  background-color: transparent; /* 隱藏 Hover 背景變色 */
+}
+
+/* 合併優化後的單一 li 規則 */
+#history-list li {
+  padding: 12px 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  gap: 12px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+
+#history-list li:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+#history-list li:last-child {
+  border-bottom: none;
+}
+
+.hist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0; /* 允許文字區域在 flex 容器中正常縮小 */
+  flex: 1;      /* 讓文字區域佔滿剩餘空間 */
+}
+
+/* 歌名/歌手文字過長，不換行並顯示 ... */
+.hist-item span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #374151; /* 從淺灰改為深灰 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hist-cover {
+  width: 56px;
+  height: 38px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0; /* 防止圖片被擠壓變形 */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* 防止日期換行 */
+.hist-date {
+  flex-shrink: 0;     /* 防止日期被擠壓 */
+  color: #6b7280; /* 從 #9ca3af 改為更清晰的灰 */
+  font-size: 0.85rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 7. 超連結與按鈕通用樣式 */
+a, button, .history-link {
+  cursor: url('picture/mouse2.png'), pointer; /* 點擊元素套用 mouse2 */
+}
+
+a {
+  color: #4f46e5;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #3730a3;
+  text-decoration: underline;
+}
+
+#today-title a {
+  color: #111827;
+}
+
+#today-title a:hover {
+  color: #4f46e5;
+}
+
+.history-link {
+  color: #1f2937;
+}
+
+.history-link:hover {
+  color: #4f46e5;
+}
+
+/* 8. 右下角製作人標註 */
+.footer-credits {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  padding: 8px 16px;
+  font-size: 0.8rem;
+  color: #555;
+  
+  /* 半透明毛玻璃背景 */
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.footer-credits strong {
+  color: #111;
+}
