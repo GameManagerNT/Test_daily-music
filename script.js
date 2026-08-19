@@ -1,11 +1,46 @@
-// 全域變數
+// 全域狀態管理
 let currentPage = 1;
 const itemsPerPage = 10;
-let historySongs = [];         // 歷史歌曲完整清單
-let filteredHistorySongs = []; // 搜尋過濾後的歷史歌曲清單
+let historySongs = [];         
+let filteredHistorySongs = []; 
 
-// 1. 自動解析 YouTube URL 抓取高畫質封面圖片
+// 🛡️ 1. 安全防護：XSS HTML 特殊字元轉義（防範標籤注入）
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// 🛡️ 2. 安全防護：URL 規範與偽協議過濾（防範 javascript: 注入）
+function sanitizeURL(url) {
+  if (!url) return '#';
+  try {
+    const parsed = new URL(url, window.location.origin);
+    if (['http:', 'https:'].includes(parsed.protocol)) {
+      return parsed.href;
+    }
+  } catch (e) {
+    // URL 解析失敗時退回 # 確保安全
+  }
+  return '#';
+}
+
+// ⚡ 3. 效能優化：Debounce 防抖函式
+function debounce(func, delay = 200) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
+// 🎵 4. 自動解析 YouTube URL 抓取高畫質封面圖片
 function getYouTubeCover(url) {
+  if (!url) return "https://via.placeholder.com/400x225?text=No+Cover";
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
   const match = url.match(regExp);
   
@@ -16,7 +51,7 @@ function getYouTubeCover(url) {
   return "https://via.placeholder.com/400x225?text=No+Cover";
 }
 
-// 2. 初始化應用程式：讀取 playlist.json 資料
+// 🚀 5. 初始化應用程式：讀取 playlist.json 資料
 async function initApp() {
   try {
     const response = await fetch('playlist.json');
@@ -25,61 +60,58 @@ async function initApp() {
     }
     const playlist = await response.json();
 
-    // 動態計算並更新大標題的 Day 天數
+    // 動態計算大標題的 Day 天數（使用 textContent 確保安全）
     const totalDays = playlist.length;
     const titleEl = document.getElementById("main-title");
     if (titleEl) {
-      titleEl.innerText = `🎵 每日一推薦 Day ${totalDays} 🎵`;
+      titleEl.textContent = `🎵 每日一推薦 Day ${totalDays} 🎵`;
     }
 
-    // 取得今日推薦歌曲 (預設找符合今天日期的，沒有就取第一筆)
+    // 取得今日推薦歌曲
     const todayStr = new Date().toISOString().split('T')[0];
     const todaySong = playlist.find(song => song.date === todayStr) || playlist[0];
 
-    // 渲染今日推薦區塊
-    document.getElementById("today-date").innerText = todaySong.date;
+    // 渲染今日推薦區塊（使用安全的 textContent 與過濾後的 URL）
+    document.getElementById("today-date").textContent = todaySong.date ? escapeHTML(todaySong.date) : '----/--/--';
     
     const coverImg = document.getElementById("today-cover");
-    coverImg.src = getYouTubeCover(todaySong.url);
-    coverImg.alt = `${todaySong.title} 封面`;
+    coverImg.src = sanitizeURL(getYouTubeCover(todaySong.url));
+    coverImg.alt = `${todaySong.title ? escapeHTML(todaySong.title) : '今日推薦'} 封面`;
 
     const coverLink = document.getElementById("today-cover-link");
-    if (coverLink) coverLink.href = todaySong.url;
+    if (coverLink) coverLink.href = sanitizeURL(todaySong.url);
 
+    // 今日標題連結轉義
     const todayTitleEl = document.getElementById("today-title");
-    todayTitleEl.innerHTML = `<a href="${todaySong.url}" target="_blank" rel="noopener noreferrer">${todaySong.title}</a>`;
+    todayTitleEl.innerHTML = `<a href="${sanitizeURL(todaySong.url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(todaySong.title)}</a>`;
 
-    document.getElementById("today-artist").innerText = `演唱者：${todaySong.artist}`;
+    document.getElementById("today-artist").textContent = `演唱者：${todaySong.artist ? todaySong.artist : '未知'}`;
 
-    // 準備歷史清單（扣除今日推薦）
+    // 歷史清單（扣除今日推薦）
     historySongs = playlist.filter(song => song.date !== todaySong.date);
     filteredHistorySongs = [...historySongs];
 
-    // 初始化搜尋框監聽事件
     initSearch();
-
-    // 渲染第一頁歷史清單
     renderHistoryPage(1);
 
-    // 啟動背景飄落封面動畫（傳入所有歌曲的封面 URL）
+    // 啟動【具備動態記憶體管理】的 Canvas 背景動畫
     const coverUrls = playlist.map(song => getYouTubeCover(song.url));
     initFallingCovers(coverUrls);
 
   } catch (error) {
     console.error("載入歌曲資料庫失敗：", error);
     const todayTitleEl = document.getElementById("today-title");
-    if (todayTitleEl) todayTitleEl.innerText = "無法載入歌曲資料庫";
+    if (todayTitleEl) todayTitleEl.textContent = "無法載入歌曲資料庫";
   }
 }
 
-// 3. 渲染歷史歌曲分頁與搜尋結果
+// 📜 6. 渲染歷史歌曲分頁與搜尋結果
 function renderHistoryPage(page) {
   const historyUl = document.getElementById("history-list");
   if (!historyUl) return;
 
   historyUl.innerHTML = "";
 
-  // 當搜尋結果為 0 時，顯示「無」
   if (filteredHistorySongs.length === 0) {
     historyUl.innerHTML = `<li class="no-result">無</li>`;
     
@@ -87,13 +119,12 @@ function renderHistoryPage(page) {
     const prevBtn = document.getElementById("prev-btn");
     const nextBtn = document.getElementById("next-btn");
 
-    if (pageInfoEl) pageInfoEl.innerText = `第 0 / 0 頁`;
+    if (pageInfoEl) pageInfoEl.textContent = `第 0 / 0 頁`;
     if (prevBtn) prevBtn.disabled = true;
     if (nextBtn) nextBtn.disabled = true;
     return;
   }
 
-  // 計算分頁範圍
   const totalPages = Math.ceil(filteredHistorySongs.length / itemsPerPage) || 1;
   currentPage = Math.max(1, Math.min(page, totalPages));
 
@@ -101,100 +132,116 @@ function renderHistoryPage(page) {
   const endIndex = startIndex + itemsPerPage;
   const pageSongs = filteredHistorySongs.slice(startIndex, endIndex);
 
-  // 渲染清單項目
+  // 渲染歷史清單項目（完整 XSS Sanitation 轉義）
   pageSongs.forEach(song => {
     const li = document.createElement("li");
-    const songCoverUrl = getYouTubeCover(song.url);
+    const songCoverUrl = sanitizeURL(getYouTubeCover(song.url));
 
     li.innerHTML = `
       <div class="hist-item">
-        <img src="${songCoverUrl}" alt="${song.title}" class="hist-cover">
+        <img src="${songCoverUrl}" alt="${escapeHTML(song.title)}" class="hist-cover" loading="lazy">
         <span>
-          <a href="${song.url}" target="_blank" rel="noopener noreferrer" class="history-link">
-            <strong>${song.title}</strong>
-          </a> - ${song.artist}
+          <a href="${sanitizeURL(song.url)}" target="_blank" rel="noopener noreferrer" class="history-link">
+            <strong>${escapeHTML(song.title)}</strong>
+          </a> - ${escapeHTML(song.artist)}
         </span>
       </div>
-      <span class="hist-date">${song.date}</span>
+      <span class="hist-date">${escapeHTML(song.date)}</span>
     `;
     historyUl.appendChild(li);
   });
 
-  // 更新頁碼按鈕狀態
   const pageInfoEl = document.getElementById("page-info");
   const prevBtn = document.getElementById("prev-btn");
   const nextBtn = document.getElementById("next-btn");
 
-  if (pageInfoEl) pageInfoEl.innerText = `第 ${currentPage} / ${totalPages} 頁`;
+  if (pageInfoEl) pageInfoEl.textContent = `第 ${currentPage} / ${totalPages} 頁`;
   if (prevBtn) prevBtn.disabled = (currentPage === 1);
   if (nextBtn) nextBtn.disabled = (currentPage === totalPages);
 }
 
-// 4. 切換頁碼 Function (按鈕 onclick 呼叫)
+// 📄 7. 分頁切換
 function changePage(direction) {
   renderHistoryPage(currentPage + direction);
 }
 
-// 5. 右上角搜尋監聽事件
+// 🔍 8. 防抖搜尋監聽事件
 function initSearch() {
   const searchInput = document.getElementById('search-input');
   if (!searchInput) return;
 
-  searchInput.addEventListener('input', (e) => {
+  searchInput.addEventListener('input', debounce((e) => {
     const keyword = e.target.value.toLowerCase().trim();
 
     filteredHistorySongs = historySongs.filter(song =>
-      song.title.toLowerCase().includes(keyword) ||
-      song.artist.toLowerCase().includes(keyword)
+      (song.title && song.title.toLowerCase().includes(keyword)) ||
+      (song.artist && song.artist.toLowerCase().includes(keyword))
     );
 
-    // 搜尋後重置到第 1 頁渲染
     renderHistoryPage(1);
-  });
+  }, 200));
 }
 
-// ❄️ 背景封面飄落雪花效果（避開中間卡片 + 封面不重複）
+// ❄️ 9. 高階動態記憶體管理 Canvas 背景動畫 (Texture Pool + Object Pool)
 function initFallingCovers(coverUrls) {
   const canvas = document.getElementById("snow-canvas");
   if (!canvas || coverUrls.length === 0) return;
 
   const ctx = canvas.getContext("2d");
-  let width = canvas.width = window.innerWidth;
-  let height = canvas.height = window.innerHeight;
+  let width = (canvas.width = window.innerWidth);
+  let height = (canvas.height = window.innerHeight);
 
-  window.addEventListener("resize", () => {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-  });
+  let animationFrameId = null;
 
-  const loadedImages = [];
-  let availableDeck = []; // 尚未使用的封面牌組
+  // 💡 自適應記憶體控制：依設備 CPU 核心數設定上限
+  const cores = navigator.hardwareConcurrency || 4;
+  const PARTICLE_COUNT = cores < 4 ? 10 : 20;  
+  const MAX_ACTIVE_TEXTURES = PARTICLE_COUNT;  
 
-  // 💡 不重複抽牌邏輯：當牌組抽空時，重新洗牌
-  function getUniqueImage() {
-    if (loadedImages.length === 0) return null;
-    
-    // 如果牌組空了，將所有圖片重新複製一份並洗牌 (Shuffle)
-    if (availableDeck.length === 0) {
-      availableDeck = [...loadedImages].sort(() => Math.random() - 0.5);
+  // 💡 Texture Pool：記憶體動態分配與顯存釋放
+  const texturePool = new Map(); 
+  let urlQueue = [...coverUrls].sort(() => Math.random() - 0.5);
+
+  function allocateTexture(url, callback) {
+    if (texturePool.has(url)) {
+      callback(texturePool.get(url));
+      return;
     }
-    
-    // 每次拿走一張牌，確保不重複
-    return availableDeck.pop();
+
+    if (texturePool.size >= MAX_ACTIVE_TEXTURES) {
+      freeOldestTexture();
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      texturePool.set(url, img);
+      callback(img);
+    };
+    img.src = url;
   }
 
-  // 載入封面圖片
-  coverUrls.forEach(url => {
-    const img = new Image();
-    img.onload = () => loadedImages.push(img);
-    img.src = url;
-  });
+  // 主動清空 src 觸發 GPU 顯存回收
+  function freeOldestTexture() {
+    const firstKey = texturePool.keys().next().value;
+    if (firstKey) {
+      const imgToFree = texturePool.get(firstKey);
+      if (imgToFree) {
+        imgToFree.src = ""; // 斷開顯存
+      }
+      texturePool.delete(firstKey);
+    }
+  }
 
-  // 取得左右兩側的 X 座標範圍 (避開中間卡片)
+  function getNextUrl() {
+    if (urlQueue.length === 0) {
+      urlQueue = [...coverUrls].sort(() => Math.random() - 0.5);
+    }
+    return urlQueue.pop();
+  }
+
   function getRandomX() {
-    const centerMargin = 320; 
+    const centerMargin = 320;
     const centerX = width / 2;
-    
     if (Math.random() < 0.5) {
       return Math.random() * Math.max(0, centerX - centerMargin);
     } else {
@@ -203,50 +250,47 @@ function initFallingCovers(coverUrls) {
     }
   }
 
-  const particleCount = 25;
-  const particles = [];
+  // 💡 Object Pool：重複使用粒子物件，消除垃圾回收 (GC Stop)
+  const particlePool = Array.from({ length: PARTICLE_COUNT }, () => ({
+    x: getRandomX(),
+    y: Math.random() * height - height,
+    size: Math.random() * 25 + 35,
+    speedY: Math.random() * 0.6 + 0.3,
+    speedX: Math.random() * 0.4 - 0.2,
+    rotation: Math.random() * 360,
+    rotSpeed: (Math.random() - 0.5) * 0.5,
+    opacity: Math.random() * 0.2 + 0.25,
+    img: null,
+    currentUrl: null
+  }));
 
-  function createParticle() {
-    return {
-      x: getRandomX(),
-      y: Math.random() * height - height,
-      size: Math.random() * 30 + 35,
-      speedY: Math.random() * 0.6 + 0.3,
-      speedX: Math.random() * 0.4 - 0.2,
-      rotation: Math.random() * 360,
-      rotSpeed: (Math.random() - 0.5) * 0.5,
-      opacity: Math.random() * 0.2 + 0.25,
-      img: null
-    };
-  }
+  particlePool.forEach(p => {
+    p.currentUrl = getNextUrl();
+    allocateTexture(p.currentUrl, (img) => { p.img = img; });
+  });
 
-  for (let i = 0; i < particleCount; i++) {
-    particles.push(createParticle());
-  }
-
-  function animate() {
+  // 主繪製迴圈
+  function render() {
     ctx.clearRect(0, 0, width, height);
 
-    particles.forEach(p => {
-      // 若粒子還沒有分配到圖片，使用不重複抽牌機制分配
-      if (!p.img && loadedImages.length > 0) {
-        p.img = getUniqueImage();
-      }
+    for (let i = 0; i < particlePool.length; i++) {
+      const p = particlePool[i];
 
       p.y += p.speedY;
       p.x += p.speedX;
       p.rotation += p.rotSpeed;
 
-      // 當飄出畫面底部時重置，並重新抽取一張不重複的封面
+      // 飄出底部：回收座標與重新分配圖片記憶體
       if (p.y > height + p.size) {
         p.y = -p.size;
         p.x = getRandomX();
-        if (loadedImages.length > 0) {
-          p.img = getUniqueImage(); // 👈 取出下一張不重複的圖片
-        }
+
+        const newUrl = getNextUrl();
+        p.currentUrl = newUrl;
+        allocateTexture(newUrl, (img) => { p.img = img; });
       }
 
-      if (p.img) {
+      if (p.img && p.img.complete && p.img.naturalWidth !== 0) {
         ctx.save();
         ctx.globalAlpha = p.opacity;
         ctx.translate(p.x, p.y);
@@ -256,13 +300,27 @@ function initFallingCovers(coverUrls) {
         ctx.drawImage(p.img, -p.size / 2, -aspectHeight / 2, p.size, aspectHeight);
         ctx.restore();
       }
-    });
+    }
 
-    requestAnimationFrame(animate);
+    animationFrameId = requestAnimationFrame(render);
   }
 
-  animate();
+  // 事件監聽與離屏凍結
+  window.addEventListener("resize", () => {
+    width = (canvas.width = window.innerWidth);
+    height = (canvas.height = window.innerHeight);
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    } else {
+      animationFrameId = requestAnimationFrame(render);
+    }
+  });
+
+  render();
 }
 
-// 當頁面 DOM 載入完畢後執行主函式
+// 頁面 DOM 載入完成後執行
 document.addEventListener("DOMContentLoaded", initApp);
