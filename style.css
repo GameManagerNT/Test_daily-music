@@ -304,6 +304,23 @@ a:hover {
   pointer-events: auto;
 }
 
+.footer-divider {
+  margin: 0 8px;
+  opacity: 0.5;
+}
+
+.github-link {
+  color: #1018b0;
+  text-decoration: none;
+  font-weight: bold;
+  transition: opacity 0.2s ease;
+}
+
+.github-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
 .footer-credits strong {
   color: #111;
 }
