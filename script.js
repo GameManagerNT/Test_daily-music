@@ -322,5 +322,33 @@ function initFallingCovers(coverUrls) {
   render();
 }
 
+function initThemeToggle() {
+  const toggleBtn = document.getElementById('theme-toggle-btn');
+  const themeIcon = document.getElementById('theme-icon');
+  if (!toggleBtn || !themeIcon) return;
+
+  // 讀取紀錄，預設為 light
+  const savedTheme = localStorage.getItem('theme');
+  
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+    themeIcon.textContent = '🌙';
+  } else {
+    document.body.classList.remove('dark-mode');
+    themeIcon.textContent = '☀️'; // 預設淺色
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    
+    themeIcon.textContent = isDark ? '🌙' : '☀️';
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  });
+}
+
 // 頁面 DOM 載入完成後執行
-document.addEventListener("DOMContentLoaded", initApp);
+document.addEventListener("DOMContentLoaded", () => {
+  initApp();
+  initThemeToggle();
+});
